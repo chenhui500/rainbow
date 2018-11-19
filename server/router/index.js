@@ -1,15 +1,12 @@
 const router = require('koa-router')()
 const public = require('./public')
-const test = require('./test')
 const user = require('./user')
 const upload = require('./upload')
-const sms = require('./sms')
+
 const wx = require('./wx')
 router.use('', user.routes(), user.allowedMethods())
-//router.use('', test.routes(), test.allowedMethods())
 router.use('', public.routes(), public.allowedMethods())
 router.use('', upload.routes(), upload.allowedMethods())
-router.use('', sms.routes(), sms.allowedMethods())
 router.use('', wx.routes(), wx.allowedMethods())
 
 module.exports = router

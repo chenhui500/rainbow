@@ -8,6 +8,12 @@ var ObjectID = require('mongodb').ObjectID;
 // Database Name
 //const dbName = 'mogodbDemo';
 
+/**
+ * 查询数据
+ * @param dbName
+ * @param callback
+ * @returns {Promise<any>}
+ */
 let query = function (dbName, callback) {
     return new Promise((resolve, reject) => {
         MongoClient.connect(url, function (err, client) {
@@ -24,7 +30,13 @@ let query = function (dbName, callback) {
     })
 }
 
-
+/**
+ * 新增数据
+ * @param dbName
+ * @param table
+ * @param obj
+ * @returns {*}
+ */
 const insert = (dbName,table, obj) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
@@ -40,6 +52,13 @@ const insert = (dbName,table, obj) => {
     })
 }
 
+/**
+ * 通过ID删除
+ * @param dbName
+ * @param table
+ * @param id
+ * @returns {*}
+ */
 const remove = (dbName,table, id) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
@@ -60,6 +79,14 @@ const remove = (dbName,table, id) => {
     })
 }
 
+/**
+ * 更新数据
+ * @param dbName
+ * @param table
+ * @param id
+ * @param obj
+ * @returns {*}
+ */
 const updata = (dbName,table, id, obj) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
@@ -82,6 +109,13 @@ const updata = (dbName,table, id, obj) => {
     })
 }
 
+/**
+ * 通过ID查询
+ * @param dbName
+ * @param table
+ * @param id
+ * @returns {*}
+ */
 const findId = (dbName,table, id) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
@@ -102,7 +136,13 @@ const findId = (dbName,table, id) => {
     })
 }
 
-//总记录数
+/**
+ * 查找总记录数
+ * @param dbName
+ * @param table
+ * @param filter
+ * @returns {*}
+ */
 const findCount=(dbName,table,filter) =>{
     filter = filter|| {}
     return query(dbName,function(db){
@@ -120,7 +160,15 @@ const findCount=(dbName,table,filter) =>{
     })
 }
 
-//分页查询
+/**
+ * 分页查询
+ * @param dbName 数据库名
+ * @param table 表名
+ * @param filter
+ * @param pageNum
+ * @param pageSize
+ * @returns {*}
+ */
 const findTablePage = (dbName,table,filter,pageNum,pageSize) =>{
      filter = filter|| {}
      pageNum = pageNum|| 1
