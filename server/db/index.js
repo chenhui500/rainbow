@@ -37,7 +37,7 @@ let query = function (dbName, callback) {
  * @param obj
  * @returns {*}
  */
-const insert = (dbName,table, obj) => {
+const insert = (dbName, table, obj) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
             const collection = db.collection(table);
@@ -59,7 +59,7 @@ const insert = (dbName,table, obj) => {
  * @param id
  * @returns {*}
  */
-const remove = (dbName,table, id) => {
+const remove = (dbName, table, id) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
             const collection = db.collection(table);
@@ -87,7 +87,7 @@ const remove = (dbName,table, id) => {
  * @param obj
  * @returns {*}
  */
-const updata = (dbName,table, id, obj) => {
+const updata = (dbName, table, id, obj) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
             const collection = db.collection(table);
@@ -116,7 +116,7 @@ const updata = (dbName,table, id, obj) => {
  * @param id
  * @returns {*}
  */
-const findId = (dbName,table, id) => {
+const findId = (dbName, table, id) => {
     return query(dbName, function (db) {
         return new Promise((resolve, reject) => {
             const collection = db.collection(table)
@@ -143,19 +143,19 @@ const findId = (dbName,table, id) => {
  * @param filter
  * @returns {*}
  */
-const findCount=(dbName,table,filter) =>{
-    filter = filter|| {}
-    return query(dbName,function(db){
-        return new Promise((resolve,reject)=>{
+const findCount = (dbName, table, filter) => {
+    filter = filter || {}
+    return query(dbName, function (db) {
+        return new Promise((resolve, reject) => {
             const collection = db.collection(table)
-            collection.find(filter).count().then(count=>{
+            collection.find(filter).count().then(count => {
                 resolve(count)
-            },err=>{
+            }, err => {
                 reject(err)
-            }).catch(err=>{
+            }).catch(err => {
                 reject(err)
             })
-            
+
         })
     })
 }
@@ -169,17 +169,34 @@ const findCount=(dbName,table,filter) =>{
  * @param pageSize
  * @returns {*}
  */
-const findTablePage = (dbName,table,filter,pageNum,pageSize) =>{
-     filter = filter|| {}
-     pageNum = pageNum|| 1
-     pageSize = pageSize|| 10
-    return query(dbName,function(db){
-        return new Promise((resolve,reject)=>{
+const findTablePage = (dbName, table, filter, pageNum, pageSize) => {
+    filter = filter || {}
+    pageNum = pageNum || 1
+    pageSize = pageSize || 10
+    return query(dbName, function (db) {
+        return new Promise((resolve, reject) => {
             const collection = db.collection(table)
-            collection.find(filter).sort({"_nowtime":-1}).limit(pageSize).skip((pageNum-1)*pageSize).toArray((err,result)=>{
-                if(err){
+            collection.find(filter).sort({"_nowtime": -1}).limit(pageSize).skip((pageNum - 1) * pageSize).toArray((err, result) => {
+                if (err) {
                     reject(err)
-                }else{
+                } else {
+                    console.dir(result)
+                    resolve(result)
+                }
+            })
+        })
+    })
+}
+//查询详情
+const findTableInfo = (dbName, table, filter) => {
+    filter = filter || {}
+    return query(dbName, function (db) {
+        return new Promise((resolve, reject) => {
+            const collection = db.collection(table)
+            collection.find(filter).toArray((err, result) => {
+                if (err) {
+                    reject(err)
+                } else {
                     console.dir(result)
                     resolve(result)
                 }
@@ -189,15 +206,15 @@ const findTablePage = (dbName,table,filter,pageNum,pageSize) =>{
 }
 
 //查询表格
-const findTableList = (dbName,table,filter) =>{
-     filter = filter|| {}
-    return query(dbName,function(db){
-        return new Promise((resolve,reject)=>{
+const findTableList = (dbName, table, filter) => {
+    filter = filter || {}
+    return query(dbName, function (db) {
+        return new Promise((resolve, reject) => {
             const collection = db.collection(table)
-            collection.find(filter).toArray((err,result)=>{
-                if(err){
+            collection.find(filter).toArray((err, result) => {
+                if (err) {
                     reject(err)
-                }else{
+                } else {
                     console.dir(result)
                     resolve(result)
                 }
@@ -206,6 +223,7 @@ const findTableList = (dbName,table,filter) =>{
     })
 }
 
+
 module.exports = {
     findCount,
     insert,
@@ -213,5 +231,6 @@ module.exports = {
     updata,
     findId,
     findTablePage,
-    findTableList
+    findTableList,
+    findTableInfo
 }

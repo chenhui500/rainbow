@@ -10,14 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@alicloud/sms-sdk": "^1.0.3",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "express": "~4.16.0",
-    "http-errors": "~1.6.2",
-    "morgan": "~1.9.0",
-    "pug": "2.0.0-beta11",
-    "@alicloud/sms-sdk": "^1.0.3",
     "fs": "0.0.1-security",
+    "http-errors": "~1.6.2",
     "images": "^3.0.1",
     "jsonwebtoken": "^8.1.0",
     "koa": "^2.4.1",
@@ -27,8 +25,11 @@
     "koa-multer": "^1.0.2",
     "koa-router": "^7.3.0",
     "koa-static": "^4.0.2",
+    "moment": "^2.22.2",
     "mongodb": "^3.0.1",
+    "morgan": "~1.9.0",
     "node-weixin-oauth": "^0.3.0",
+    "pug": "2.0.0-beta11",
     "wechat-api": "^1.35.1"
   }
 }

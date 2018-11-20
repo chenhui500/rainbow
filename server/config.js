@@ -1,6 +1,6 @@
 const config = {
       jwsSecret:'rainbow',
-      port: 8888,
+      port: 8680,
       database: {
         DATABASE: 'management',
         PORT: '27017',
