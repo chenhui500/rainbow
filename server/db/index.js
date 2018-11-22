@@ -47,6 +47,7 @@ const insert = (dbName, table, obj) => {
                 } else {
                     resolve(result)
                 }
+
             })
         })
     })
