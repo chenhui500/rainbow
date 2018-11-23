@@ -136,6 +136,30 @@ module.exports = router.post("/:db/order/getOrderList", async ctx => {
         objState=await db.findTableList(params.db,"order",paramfilter)
         result.four=objState.length;
 
+
+
+        var arr = [];
+        var results = obj
+        results.sort()
+        for (var i = 0; i < results.length;) {
+            var count = 0;
+            for (var j = i; j < results.length; j++) {
+                if (results[i].end_date === results[j].end_date) {
+                    count++;
+                }
+            }
+            arr.push({
+                date: results[i],
+                count: count
+            })
+            i+=count;
+        }
+
+        for (var k = 0; k < arr.length; k++) {
+            console.log(arr[k])
+        }
+
+
         var o;
         var arrayObj = new Array();
         obj.forEach(function(item,index){
@@ -146,12 +170,11 @@ module.exports = router.post("/:db/order/getOrderList", async ctx => {
             o=item;
             arrayObj.push(o)
         })
-        console.log("===ddddd====="+o.days)
-        console.log("===dddd====="+arrayObj)
+
         result.success=true
         result.code=0
         result.msg="获取信息成功"
-        result.data = arrayObj
+        result.data = arr
     }else{
         result.msg="未找到数据"
         result.data = obj
