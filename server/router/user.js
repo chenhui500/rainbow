@@ -72,6 +72,8 @@ module.exports = router.post('/:db/user/updateUser', async ctx => {
     ctx.body = result
 })
 
+
+
 //--------------------预约 start---------------------------------
 /**
  * 添加预约表单信息
@@ -138,16 +140,20 @@ module.exports = router.post("/:db/order/addOrder", async ctx => {
  * 获取推荐信息列表
  */
 module.exports = router.post("/:db/order/getOrderList", async ctx => {
-    let result = {success: false, msg: "", data: [], code: -1, one: 0, two: 0, three: 0, four: 0}
+    let result = {success: false, msg: "", data: [], days: 0, code: -1, one: 0, two: 0, three: 0, four: 0, sum: 0}
     let params = ctx.params
     let orders = ctx.request.body
     let obj = await db.findTableList(params.db, "order", orders)
 
     if (obj.length > 0) {
-        result.one = obj.length;
+        result.sum = obj.length;
 
-        let paramfilter = {openid: orders.openid, uid: orders.uid, recommended_state: "2"}
+        let paramfilter = {openid: orders.openid, uid: orders.uid, recommended_state: "1"}
         let objState = await db.findTableList(params.db, "order", paramfilter)
+        result.one = objState.length;
+
+        paramfilter = {openid: orders.openid, uid: orders.uid, recommended_state: "2"}
+        objState = await db.findTableList(params.db, "order", paramfilter)
         result.two = objState.length;
 
 
@@ -162,17 +168,24 @@ module.exports = router.post("/:db/order/getOrderList", async ctx => {
 
         var arr = [];
         var results = obj
+
         results.sort()
         for (var i = 0; i < results.length;) {
+            var arrayObj = new Array();
             var count = 0;
             for (var j = i; j < results.length; j++) {
                 if (results[i].end_date === results[j].end_date) {
+                    arrayObj.push(results[i])
                     count++;
                 }
             }
+            let pickDate = moment(results[i].end_date);
+            let diff = pickDate.diff(moment(), 'days');//相差几天
+
             arr.push({
-                date: results[i],
-                count: count
+                lists: arrayObj,
+                count: count,
+                days: diff
             })
             i += count;
         }
@@ -181,17 +194,6 @@ module.exports = router.post("/:db/order/getOrderList", async ctx => {
             console.log(arr[k])
         }
 
-
-        var o;
-        var arrayObj = new Array();
-        obj.forEach(function (item, index) {
-            let pickDate = moment(item.end_date);
-            let diff = pickDate.diff(moment(), 'days');//相差几天
-            console.log("========" + diff)
-            item = Object.assign(item, {days: diff})
-            o = item;
-            arrayObj.push(o)
-        })
 
         result.success = true
         result.code = 0
@@ -634,6 +636,42 @@ module.exports = router.post('/:db/promotion/delPromotion', async ctx => {
     }
     result.data = obj.value
     ctx.body = result
+})
+
+/**
+ * 获取参加活动结束时间
+ */
+module.exports = router.post("/:db/order/getOverDate", async ctx => {
+    let result = {success: false, msg: "", data: [], days: 0, code: -1 }
+    let params = ctx.params
+    let orders = ctx.request.body
+
+    let paramfilter = {openid: orders.openid, uid: orders.uid,policyid:orders.policyid}
+    let results = await db.findTableList(params.db, "order", paramfilter)
+    var rt=false;
+    var newDate=moment().format('YYYY-MM-DD')
+    if(results.length>0){
+        for (var i = 0; i < results.length;) {
+
+            var oldDate=results[i].end_date
+            var rt= moment(newDate).isBefore(oldDate)
+            if(rt){
+                result.data={end_date:oldDate}
+                break;
+            }
+            i++;
+        }
+
+    }
+    if(rt==false){
+        result.data={end_date:newDate}
+        result.code=0
+        result.success = true
+        result.msg = '获取参与活动结束时间'
+    }
+
+    ctx.body = result
+
 })
 
 //--------------------  end---------------------------------
