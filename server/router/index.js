@@ -1,6 +1,6 @@
 const router = require('koa-router')()
 const public = require('./public')
-const user = require('./user')
+const user = require('./user.js')
 const upload = require('./upload')
 
 const wx = require('./wx')

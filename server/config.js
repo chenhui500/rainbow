@@ -3,8 +3,8 @@ const config = {
       port: 8680,
       database: {
         DATABASE: 'management',
-        PORT: '27017',
-        HOST: '127.0.0.1'
+        PORT: '27899',
+        HOST: 'yuyue.rainbowsystem.cn'
       }
     }
     

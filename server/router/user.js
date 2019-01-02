@@ -5,6 +5,7 @@ const config = require('../config')
 const jwsSecret = config.jwsSecret
 var moment = require('moment');
 const crypto = require('crypto');
+const request = require('request');
 
 /**
  * 通过openid 获取用户信息
@@ -16,10 +17,34 @@ module.exports = router.post("/:db/user/getUserInfo", async ctx => {
     let obj = await db.findTableInfo(params.db, "user", user)
 
     if (obj.length > 0) {
+
+        let grade = obj[0].user_grade;
+        let rtGrade = await db.findTableInfo(params.db, "rank", {grade_type: grade})
+        let user_grade_name = "";
+
+        if (rtGrade.length > 0) {
+            user_grade_name = rtGrade[0].grade_name
+        }
+        let objData = {
+            _id: obj[0]._id,
+            openid: obj[0].openid,
+            user_name: obj[0].user_name,
+            user_phone: obj[0].user_phone,
+            user_address: obj[0].user_address,
+            user_type: obj[0].user_type,
+            invite_name: obj[0].invite_name,
+            invite_phone: obj[0].invite_phone,
+            sid: obj[0].sid,
+            create_time: obj[0].create_time,
+            user_grade: obj[0].user_grade,
+            user_grade_name: user_grade_name
+        }
+
+
         result.success = true
         result.code = 0
         result.msg = "获取用户信息成功"
-        result.data = obj
+        result.data = objData
     } else {
         result.msg = "未找到数据"
         result.data = obj
@@ -41,10 +66,32 @@ module.exports = router.post("/:db/user/addUser", async ctx => {
     let obj = await db.insert(params.db, "user", user)
 
     if (obj.insertedCount > 0) {
+
+        let rtGrade = await db.findTableInfo(params.db, "rank", {grade_type: "1"})
+        let user_grade_name = "";
+
+        if (rtGrade.length > 0) {
+            user_grade_name = rtGrade[0].grade_name
+        }
+        let objData = {
+            _id: obj.ops[0]._id,
+            openid: obj.ops[0].openid,
+            user_name: obj.ops[0].user_name,
+            user_phone: obj.ops[0].user_phone,
+            user_address: obj.ops[0].user_address,
+            user_type: obj.ops[0].user_type,
+            invite_name: obj.ops[0].invite_name,
+            invite_phone: obj.ops[0].invite_phone,
+            sid: obj.ops[0].sid,
+            create_time: obj.ops[0].create_time,
+            user_grade: obj.ops[0].user_grade,
+            user_grade_name: user_grade_name
+        }
+
         result.success = true
         result.code = 0
         result.msg = "注册用户成功"
-        result.data = obj.ops[0]
+        result.data = objData
     } else {
         result.msg = "注册用户失败"
         result.data = obj
@@ -63,15 +110,16 @@ module.exports = router.post('/:db/user/updateUser', async ctx => {
 
     let obj = await db.updata(params.db, "user", updateData.uid, updateData)
     if (obj) {
+        let dataResult=updateData
         result.success = true
         result.msg = '更新成功'
+        result.data=updateData
         result.code = 0
     } else {
         result.msg = '更新失败'
     }
     ctx.body = result
 })
-
 
 
 //--------------------预约 start---------------------------------
@@ -175,7 +223,7 @@ module.exports = router.post("/:db/order/getOrderList", async ctx => {
             var count = 0;
             for (var j = i; j < results.length; j++) {
                 if (results[i].end_date === results[j].end_date) {
-                    arrayObj.push(results[i])
+                    arrayObj.push(results[j])
                     count++;
                 }
             }
@@ -642,30 +690,49 @@ module.exports = router.post('/:db/promotion/delPromotion', async ctx => {
  * 获取参加活动结束时间
  */
 module.exports = router.post("/:db/order/getOverDate", async ctx => {
-    let result = {success: false, msg: "", data: [], days: 0, code: -1 }
+    let result = {success: false, msg: "", data: [], days: 0, code: -1}
     let params = ctx.params
     let orders = ctx.request.body
 
-    let paramfilter = {openid: orders.openid, uid: orders.uid,policyid:orders.policyid}
+    let paramfilter = {openid: orders.openid, uid: orders.uid, policyid: orders.policyid}
     let results = await db.findTableList(params.db, "order", paramfilter)
-    var rt=false;
-    var newDate=moment().format('YYYY-MM-DD')
-    if(results.length>0){
+    let rt = false;
+    let newDate = moment().format('YYYY-MM-DD')
+    if (results.length > 0) {
         for (var i = 0; i < results.length;) {
 
-            var oldDate=results[i].end_date
-            var rt= moment(newDate).isBefore(oldDate)
-            if(rt){
-                result.data={end_date:oldDate}
+            var oldDate = results[i].end_date
+            rt = moment(newDate).isBefore(oldDate)
+            console.log("--rt-->" + rt)
+            if (rt) {
+                result.data = {end_date: oldDate}
                 break;
             }
             i++;
         }
 
+    } else {
+
+        let promotionInfo = await db.findId(params.db, "promotion", "5c04c645341bc035ea0b34ca")
+        if (promotionInfo.length > 0) {
+            let d = promotionInfo[0].promotion_days;
+
+            //获取当前时间往前推移d n天 90天
+            let rtdays = moment().add(d, 'days').calendar();
+            let daysSplit = rtdays.split("/");
+            result.days = d;
+            newDate = daysSplit[2] + "-" + daysSplit[0] + "-" + daysSplit[1]
+        }
+
     }
-    if(rt==false){
-        result.data={end_date:newDate}
-        result.code=0
+    console.log("----rt-->" + rt);
+    if (rt == false) {
+        result.data = {end_date: newDate}
+        result.code = 0
+        result.success = true
+        result.msg = '获取参与活动结束时间'
+    } else {
+        result.code = 0
         result.success = true
         result.msg = '获取参与活动结束时间'
     }
@@ -673,7 +740,6 @@ module.exports = router.post("/:db/order/getOverDate", async ctx => {
     ctx.body = result
 
 })
-
 //--------------------  end---------------------------------
 
 //-------------------邀请码-----------------------
@@ -688,7 +754,7 @@ module.exports = router.post('/:db/invitecode/getInviteCode', async ctx => {
     let res = "";
 
 
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 4; i++) {
         let id = Math.ceil(Math.random() * 35);
         res += jschars[id];
     }
@@ -734,12 +800,14 @@ module.exports = router.post('/:db/invitecode/validateInviteCode', async ctx => 
     let result = {success: false, msg: '', data: [], code: -1}
     let params = ctx.params
     let selectData = ctx.request.body
-    console.log(selectData)
-    let obj = await db.findTableInfo(params.db, "invitecode", selectData)
+
+    let getData = {code: selectData.code.toUpperCase()}
+
+    let obj = await db.findTableInfo(params.db, "invitecode", getData)
     if (obj.length > 0) {
         result.success = true
         result.msg = '验证成功'
-        result.data = obj
+        result.data = obj[0]
         result.code = 0
     } else {
         result.msg = '验证不成功'
@@ -838,3 +906,157 @@ module.exports = router.post('/:db/synopsis/delSynopsis', async ctx => {
 })
 
 
+//-------------------- 简介 -------------------------------
+
+/**
+ * 添加等级名称
+ */
+module.exports = router.post("/:db/rank/addRank", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let insertData = ctx.request.body
+
+    let type = insertData.grade_type;
+    let rt = await db.findTableInfo(params.db, "rank", {grade_type: type})
+
+    if (rt.length > 0) {
+        result.success = true
+        result.code = 1
+        result.msg = "会员等级编号重复"
+    } else {
+        let obj = await db.insert(params.db, "rank", insertData)
+
+        if (obj.insertedCount) {
+            result.success = true
+            result.msg = "插入成功"
+            result.data = obj.ops[0]
+            result.code = 0
+        } else {
+            result.msg = "插入失败"
+        }
+    }
+
+
+    ctx.body = result
+})
+
+
+/**
+ * 获取等级名称
+ */
+module.exports = router.post("/:db/rank/getRanks", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let rank = ctx.request.body
+    let obj = await db.findTableInfo(params.db, "rank", rank)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 修改等级名称
+ */
+module.exports = router.post('/:db/rank/updateRank', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let updateData = ctx.request.body
+
+    let obj = await db.updata(params.db, "rank", updateData.rid, updateData)
+    if (obj) {
+        result.success = true
+        result.msg = '更新成功'
+        result.data = obj.value
+        result.code = 0
+    } else {
+        result.msg = '更新失败'
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 删除等级名称
+ */
+module.exports = router.post('/:db/rank/delRank', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let delData = ctx.request.body
+    let obj = await db.remove(params.db, "rank", delData.rid)
+    if (obj.value) {
+        result.success = true
+        result.msg = '删除成功'
+        result.code = 0
+    } else {
+        result.msg = '删除失败'
+        result.code = -1
+    }
+    result.data = obj.value
+    ctx.body = result
+})
+
+/**
+ * 获取微信的opengId
+ */
+module.exports = router.post("/:db/wx/getOpeniId", async (ctx, next) => {
+
+    let gtData = ctx.request.body
+    try {
+        let AppID = "wx3497ec70c2e7c334";
+        let AppSecret = "91ef3146d946f21d99dceb3215c90512";
+        //let code="021SUEmo0i8hql1OnGmo0f8pmo0SUEmk";
+        let code = gtData.code
+        console.log("--code-->" + code)
+        let result = await request.get({
+                url: "https://api.weixin.qq.com/sns/jscode2session?js_code=" + code + "&appid="+AppID+"&secret="+AppSecret+"&grant_type=authorization_code"//'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + AppID + '&secret=' + AppSecret + '&code='+ code + '&grant_type=authorization_code',
+            },
+            function (error, response, body) {
+
+                console.log("====error==" + error)
+                console.log("====response==" + response.statusCode)
+
+                if (response.statusCode == 200) {
+                    // 第三步：拉取用户信息(需scope为 snsapi_userinfo)
+                    // console.log(JSON.parse(body));
+                    var data = JSON.parse(body);
+
+                    var openid = data.openid;
+
+                    console.log("====openid====" + openid)
+
+
+
+                } else {
+                    console.log(response.statusCode);
+                }
+            }
+        );
+
+        ctx.type = 'json';
+        ctx.body = result;
+        /* console.log(req.body);
+         let appId = "wx3497ec70c2e7c334";
+         let secret = "91ef3146d946f21d99dceb3215c90512";
+         let { js_code } = req.body;
+         let opts = {
+             url: `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${secret}&js_code=${js_code}&grant_type=authorization_code`
+         }
+         let r1 = await Ut.promiseReq(opts);
+         r1 = JSON.parse(r1);
+         console.log(r1);
+         res.json(r1);*/
+    }
+    catch (e) {
+        console.log(e);
+
+    }
+})
