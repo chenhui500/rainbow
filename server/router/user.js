@@ -1004,6 +1004,125 @@ module.exports = router.post('/:db/rank/delRank', async ctx => {
     ctx.body = result
 })
 
+
+
+
+//--------------------新闻 start---------------------------------
+/**
+ * 添加新闻
+ */
+module.exports = router.post("/:db/news/addNews", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let insertData = ctx.request.body
+
+    let obj = await db.insert(params.db, "news", insertData)
+
+    if (obj.insertedCount) {
+        result.success = true
+        result.msg = "插入成功"
+        result.data = obj.ops[0]
+        result.code = 0
+    } else {
+        result.msg = "插入失败"
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 获取新闻说明
+ */
+module.exports = router.post("/:db/news/getNews", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let user = ctx.request.body
+    let obj = await db.findTableInfo(params.db, "news", user)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 修改新闻
+ */
+module.exports = router.post('/:db/news/updateNews', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let updateData = ctx.request.body
+
+    let obj = await db.updata(params.db, "news", updateData.newsId, updateData)
+    if (obj) {
+        result.success = true
+        result.msg = '更新成功'
+        result.code = 0
+    } else {
+        result.msg = '更新失败'
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 删除新闻
+ */
+module.exports = router.post('/:db/news/delNews', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let delData = ctx.request.body
+    let obj = await db.remove(params.db, "news", delData.newsId)
+    if (obj.value) {
+        result.success = true
+        result.msg = '删除成功'
+        result.code = 0
+    } else {
+        result.msg = '删除失败'
+        result.code = -1
+    }
+    result.data = obj.value
+    ctx.body = result
+})
+
+
+
+/**
+ * 通过newsId 获取新闻详情
+ */
+module.exports = router.post("/:db/onews/getNewsInf", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let news = ctx.request.body
+    let obj = await db.findId(params.db, "news", news.newId)
+
+    if (obj.length > 0) {
+        let objData = {
+            _id: obj[0]._id,
+            news_title: obj[0].news_title,
+            news_content: obj[0].news_content
+        }
+        result.success = true
+        result.code = 0
+        result.msg = "获取详情成功"
+        result.data = objData
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+//--------------------新闻 end---------------------------------
+
+
+
 /**
  * 获取微信的opengId
  */
