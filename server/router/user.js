@@ -462,6 +462,28 @@ module.exports = router.post('/:db/reward/delReward', async ctx => {
     result.data = obj.value
     ctx.body = result
 })
+
+
+/**
+ * 通过id获取推荐奖励说明
+ */
+
+module.exports = router.post('/:db/reward/getRewardById', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let orders = ctx.request.body
+    let id = orders.rewardId
+    let obj = await db.findId(params.db, "reward", id)
+    if (obj.length > 0) {
+        result.success = true
+        result.msg = '获取数据成功'
+        result.data = obj
+        result.code = 0
+    } else {
+        result.msg = '获取数据不成功'
+    }
+    ctx.body = result
+})
 //--------------------推荐奖励说明 end---------------------------------
 
 /**
@@ -1097,7 +1119,7 @@ module.exports = router.post('/:db/news/delNews', async ctx => {
 /**
  * 通过newsId 获取新闻详情
  */
-module.exports = router.post("/:db/onews/getNewsInf", async ctx => {
+module.exports = router.post("/:db/news/getNewsInf", async ctx => {
     let result = {success: false, msg: "", data: [], code: -1}
     let params = ctx.params
     let news = ctx.request.body
@@ -1112,7 +1134,7 @@ module.exports = router.post("/:db/onews/getNewsInf", async ctx => {
         result.success = true
         result.code = 0
         result.msg = "获取详情成功"
-        result.data = objData
+        result.data = obj
     } else {
         result.msg = "未找到数据"
         result.data = obj

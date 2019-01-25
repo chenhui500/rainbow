@@ -31,6 +31,7 @@
     "morgan": "~1.9.0",
     "node-weixin-oauth": "^0.3.0",
     "pug": "2.0.0-beta11",
+    "ueditor": "^1.2.3",
     "wechat-api": "^1.35.1"
   }
 }
