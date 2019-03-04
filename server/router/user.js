@@ -107,13 +107,14 @@ module.exports = router.post('/:db/user/updateUser', async ctx => {
     let result = {success: false, msg: '', data: [], code: -1}
     let params = ctx.params
     let updateData = ctx.request.body
-
-    let obj = await db.updata(params.db, "user", updateData.uid, updateData)
+    let id=updateData.uid;
+   delete updateData.uid;
+    console.log(updateData);
+    let obj = await db.updata(params.db, "user",id , updateData)
     if (obj) {
-        let dataResult=updateData
         result.success = true
         result.msg = '更新成功'
-        result.data=updateData
+        result.data = updateData
         result.code = 0
     } else {
         result.msg = '更新失败'
@@ -121,6 +122,27 @@ module.exports = router.post('/:db/user/updateUser', async ctx => {
     ctx.body = result
 })
 
+
+/**
+ * 修改用户基本信息
+ */
+module.exports = router.post('/:db/user/checkUser', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let checkData = ctx.request.body
+
+    let obj = await db.findTableInfo(params.db, "user", checkData)
+    if (obj.length>0) {
+
+        result.success = false
+        result.msg = '手机号已经注册过'
+        result.code = 0
+    } else {
+        result.success = true
+        result.msg = '手机号未注册过'
+    }
+    ctx.body = result
+})
 
 //--------------------预约 start---------------------------------
 /**
@@ -179,6 +201,101 @@ module.exports = router.post("/:db/order/addOrder", async ctx => {
     } else {
         result.msg = "提交不成功"
     }
+
+    ctx.body = result
+})
+
+
+/**
+ * 获取业务员已经推荐的列表
+ */
+module.exports = router.post("/:db/order/getSalesmanOrderList", async ctx => {
+    let result = {success: false, msg: "", data: [], days: 0, code: -1, one: 0, two: 0, three: 0, four: 0, sum: 0}
+    let params = ctx.params
+    let orders = ctx.request.body
+
+
+    var lists = [];
+    let obj = await db.findTableList(params.db, "user", orders)
+    let o=0
+    let w=0
+    let t=0
+    let f=0
+    let s=0
+    for (var i = 0; i < obj.length; i++) {
+        var arr = [];
+        let user={
+            "_id" : obj[i]._id ,
+            "openid" : obj[i].openid ,
+            "user_name" :obj[i].user_name ,
+            "user_phone" :obj[i].user_phone ,
+            "user_address" : obj[i].user_address ,
+            "user_type" : obj[i].user_type ,
+            "invite_name" : obj[i].invite_name ,
+            "invite_phone" : obj[i].invite_phone ,
+            "sid" : obj[i].sid ,
+            "create_time" : obj[i].create_time ,
+            "user_grade" : obj[i].user_grade
+        }
+
+        var paramfilter = {openid: obj[i].openid.toString(), uid: obj[i]._id.toString()};
+        let objState = await db.findTableList(params.db, "order", paramfilter)
+
+        for(var j=0;j<objState.length;j++){
+            let objData = {
+                _id: objState[j]._id,
+                friends_name: objState[j].friends_name,
+                friends_phone: objState[j].friends_phone,
+                friends_address: objState[j].friends_address,
+                appointment_date: objState[j].appointment_date,
+                appointment_specific_time: objState[j].appointment_specific_time,
+                user_name:objState[j].user_name,
+                user_phone: objState[j].user_phone,
+                openid: objState[j].openid,
+                uid:objState[j].uid,
+                policyid: objState[j].policyid,
+                end_date: objState[j].end_date,
+                recommended_state: objState[j].recommended_state,
+                policy_type: objState[j].policy_type,
+                create_time: objState[j].create_time,
+                orderId:objState[j].orderId
+            }
+            switch (objState[j].recommended_state) {
+                case "1":
+                    o=o+1;
+                    result.one=o;
+                    break;
+                case "2":
+                    w=w+1;
+                    result.two=w;
+                    break;
+                case "3":
+                    t=t+1;
+                    result.three=t;
+                    break;
+                case "4":
+                    f=f+1;
+                    result.four=f;
+                    break;
+            }
+           s=s+1
+            arr.push(
+                 objData
+            )
+
+        }
+
+
+        lists.push({
+            userinfo: user,
+            friends: arr,
+        })
+    }
+    result.sum=s
+    result.success = true
+    result.code = 0
+    result.msg = "获取信息成功"
+    result.data = lists
 
     ctx.body = result
 })
@@ -282,8 +399,10 @@ module.exports = router.post('/:db/order/updateOrder', async ctx => {
     let result = {success: false, msg: '', data: [], code: -1}
     let params = ctx.params
     let updateData = ctx.request.body
+    let id=updateData.orderId;
+    delete updateData.orderId;
 
-    let obj = await db.updata(params.db, "order", updateData.orderId, updateData)
+    let obj = await db.updata(params.db, "order", id, updateData)
     if (obj) {
         result.success = true
         result.msg = '更新成功'
@@ -430,8 +549,10 @@ module.exports = router.post('/:db/reward/updateReward', async ctx => {
     let result = {success: false, msg: '', data: [], code: -1}
     let params = ctx.params
     let updateData = ctx.request.body
+    let id=updateData.rewardId;
+    delete updateData.rewardId;
 
-    let obj = await db.updata(params.db, "reward", updateData.rewardId, updateData)
+    let obj = await db.updata(params.db, "reward", id, updateData)
     if (obj) {
         result.success = true
         result.msg = '更新成功'
@@ -542,7 +663,10 @@ module.exports = router.post("/:db/admin/updateAdminUser", async ctx => {
     var cryptedPassword = md5.update(updateData.password).digest('hex');
     updateData = Object.assign(updateData, {password: cryptedPassword})
 
-    let obj = await db.updata(params.db, "admin", updateData.adminid, updateData)
+    let id=updateData.adminid;
+    delete updateData.adminid;
+
+    let obj = await db.updata(params.db, "admin", id, updateData)
 
     if (obj) {
         result.success = true
@@ -675,7 +799,10 @@ module.exports = router.post('/:db/promotion/updatePromotion', async ctx => {
     let params = ctx.params
     let updateData = ctx.request.body
 
-    let obj = await db.updata(params.db, "promotion", updateData.promotionid, updateData)
+    let id=updateData.promotionid;
+    delete updateData.promotionid;
+
+    let obj = await db.updata(params.db, "promotion", id, updateData)
     if (obj) {
         result.success = true
         result.msg = '更新成功'
@@ -831,6 +958,9 @@ module.exports = router.post('/:db/invitecode/validateInviteCode', async ctx => 
         result.msg = '验证成功'
         result.data = obj[0]
         result.code = 0
+        console.log("======"+obj[0]._id)
+        await db.remove(params.db, "invitecode", obj[0]._id)
+
     } else {
         result.msg = '验证不成功'
     }
@@ -894,7 +1024,10 @@ module.exports = router.post('/:db/synopsis/updateSynopsis', async ctx => {
     let params = ctx.params
     let updateData = ctx.request.body
 
-    let obj = await db.updata(params.db, "synopsis", updateData.sid, updateData)
+    let id=updateData.sid;
+    delete updateData.sid;
+
+    let obj = await db.updata(params.db, "synopsis", id, updateData)
     if (obj) {
         result.success = true
         result.msg = '更新成功'
@@ -993,7 +1126,10 @@ module.exports = router.post('/:db/rank/updateRank', async ctx => {
     let params = ctx.params
     let updateData = ctx.request.body
 
-    let obj = await db.updata(params.db, "rank", updateData.rid, updateData)
+    let id=updateData.rid;
+    delete updateData.rid;
+
+    let obj = await db.updata(params.db, "rank", id, updateData)
     if (obj) {
         result.success = true
         result.msg = '更新成功'
@@ -1025,8 +1161,6 @@ module.exports = router.post('/:db/rank/delRank', async ctx => {
     result.data = obj.value
     ctx.body = result
 })
-
-
 
 
 //--------------------新闻 start---------------------------------
@@ -1082,7 +1216,10 @@ module.exports = router.post('/:db/news/updateNews', async ctx => {
     let params = ctx.params
     let updateData = ctx.request.body
 
-    let obj = await db.updata(params.db, "news", updateData.newsId, updateData)
+    let id=updateData.newsId;
+    delete updateData.newsId;
+
+    let obj = await db.updata(params.db, "news", id, updateData)
     if (obj) {
         result.success = true
         result.msg = '更新成功'
@@ -1115,7 +1252,6 @@ module.exports = router.post('/:db/news/delNews', async ctx => {
 })
 
 
-
 /**
  * 通过newsId 获取新闻详情
  */
@@ -1144,7 +1280,6 @@ module.exports = router.post("/:db/news/getNewsInf", async ctx => {
 //--------------------新闻 end---------------------------------
 
 
-
 /**
  * 获取微信的opengId
  */
@@ -1158,7 +1293,7 @@ module.exports = router.post("/:db/wx/getOpeniId", async (ctx, next) => {
         let code = gtData.code
         console.log("--code-->" + code)
         let result = await request.get({
-                url: "https://api.weixin.qq.com/sns/jscode2session?js_code=" + code + "&appid="+AppID+"&secret="+AppSecret+"&grant_type=authorization_code"//'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + AppID + '&secret=' + AppSecret + '&code='+ code + '&grant_type=authorization_code',
+                url: "https://api.weixin.qq.com/sns/jscode2session?js_code=" + code + "&appid=" + AppID + "&secret=" + AppSecret + "&grant_type=authorization_code"//'https://api.weixin.qq.com/sns/oauth2/access_token?appid=' + AppID + '&secret=' + AppSecret + '&code='+ code + '&grant_type=authorization_code',
             },
             function (error, response, body) {
 
@@ -1173,7 +1308,6 @@ module.exports = router.post("/:db/wx/getOpeniId", async (ctx, next) => {
                     var openid = data.openid;
 
                     console.log("====openid====" + openid)
-
 
 
                 } else {
@@ -1201,3 +1335,218 @@ module.exports = router.post("/:db/wx/getOpeniId", async (ctx, next) => {
 
     }
 })
+
+
+//--------------------轮播图片 start---------------------------------
+
+/**
+ * 添加轮播图片
+ */
+module.exports = router.post("/:db/carousel/addCarouselImg", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let insertData = ctx.request.body
+    //imgUrl hyperlink
+    let obj = await db.insert(params.db, "carousel", insertData)
+
+    if (obj.insertedCount) {
+        result.success = true
+        result.msg = "插入成功"
+        result.data = obj.ops[0]
+        result.code = 0
+    } else {
+        result.msg = "插入失败"
+    }
+    ctx.body = result
+})
+
+/**
+ * 删除轮播图片
+ */
+module.exports = router.post('/:db/carousel/delCarouselImg', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let delData = ctx.request.body
+    let obj = await db.remove(params.db, "carousel", delData.cid)
+    if (obj.value) {
+        result.success = true
+        result.msg = '删除成功'
+        result.code = 0
+    } else {
+        result.msg = '删除失败'
+        result.code = -1
+    }
+    result.data = obj.value
+    ctx.body = result
+})
+
+
+
+/**
+ * 获取轮播图片详情
+ */
+module.exports = router.post("/:db/carousel/getCarouselImg", async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let carousel = ctx.request.body
+    let id = carousel.cid
+    let obj = await db.findId(params.db, "carousel", id)
+    if (obj.length > 0) {
+        result.success = true
+        result.msg = '获取数据成功'
+        result.data = obj
+        result.code = 0
+    } else {
+        result.msg = '获取数据不成功'
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 修改轮播图片
+ */
+module.exports = router.post('/:db/carousel/updateCarouselImg', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let updateData = ctx.request.body
+
+    let id=updateData.cid;
+    delete updateData.cid;
+
+    let obj = await db.updata(params.db, "carousel", id, updateData)
+    if (obj) {
+        result.success = true
+        result.msg = '更新成功'
+        result.code = 0
+    } else {
+        result.msg = '更新失败'
+    }
+    ctx.body = result
+})
+
+
+
+/**
+ * 获取轮播图片列表
+ */
+module.exports = router.post("/:db/carousel/getCarousels", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let carousel = ctx.request.body
+    let obj = await db.findTableInfo(params.db, "carousel", carousel)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+//--------------------轮播图片 end---------------------------------
+
+
+//--------------------省市区 start---------------------------------
+
+/**
+ * 获取省列表
+ */
+module.exports = router.post("/:db/area/getProvinceList", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let areaData = ctx.request.body
+    let obj = await db.findTableInfo(params.db, "area", areaData)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 获取省列表
+ */
+module.exports = router.post("/:db/area/getProvinceList", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let areaData = ctx.request.body
+    let obj = await db.findTableInfo(params.db, "area", areaData)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+
+/**
+ * 获取市列表
+ */
+module.exports = router.post("/:db/area/getCityList", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let areaData = ctx.request.body
+    let param={
+        "level":"2",
+        "parent_code":areaData.area_code
+    }
+    let obj = await db.findTableInfo(params.db, "area", param)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+
+
+/**
+ * 获取县列表
+ */
+module.exports = router.post("/:db/area/getCountyList", async ctx => {
+    let result = {success: false, msg: "", data: [], code: -1}
+    let params = ctx.params
+    let areaData = ctx.request.body
+    let param={
+        "level":"3",
+        "parent_code":areaData.area_code
+    }
+    let obj = await db.findTableInfo(params.db, "area", param)
+
+    if (obj.length > 0) {
+        result.success = true
+        result.code = 0
+        result.msg = "获取信息成功"
+        result.data = obj
+    } else {
+        result.msg = "未找到数据"
+        result.data = obj
+    }
+    ctx.body = result
+})
+
+//--------------------省市区 end---------------------------------
