@@ -414,6 +414,56 @@ module.exports = router.post('/:db/order/updateOrder', async ctx => {
 })
 
 
+/**
+ * 获取所有的推荐列表信息
+ */
+module.exports = router.get('/:db/order/getOrderLists', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+
+    let objState =  await db.findTableList(params.db,"order",  {});
+    if (objState) {
+        var arrayObj = new Array();
+        for(var j=0;j<objState.length;j++) {
+            let state="";
+            switch (objState[j].recommended_state){
+                case "1":
+                    state="已推荐";
+                    break;
+                case "2":
+                    state="已上门";
+                    break;
+                case "3":
+                    state="已成交";
+                    break;
+                case "4":
+                    state="失效";
+                    break;
+            }
+            let objData = {
+                friends_name: objState[j].friends_name,
+                friends_phone: objState[j].friends_phone,
+                friends_address: objState[j].friends_address,
+                appointment_date: objState[j].appointment_date,
+                appointment_specific_time: objState[j].appointment_specific_time,
+                user_name: objState[j].user_name,
+                user_phone: objState[j].user_phone,
+                end_date: objState[j].end_date,
+                recommended_state:state
+            }
+            arrayObj.push(objData);
+        }
+        result.data = arrayObj
+        result.success = true
+        result.msg = '获取数据列表成功'
+        result.code = 0
+    } else {
+        result.msg = '获取数据列表失败'
+    }
+    ctx.body = result
+})
+
+
 //必带参数 pageNum ,pageSize, filter    不传pageNum or pageSize 当做全部查
 module.exports = router.get('/:db/api/:table', async ctx => {
     let result = {success: false, msg: '', data: [], code: -1, total: 0}
