@@ -207,6 +207,87 @@ module.exports = router.post("/:db/order/addOrder", async ctx => {
 
 
 /**
+ * 获取所有业务员推荐的好友基本信息
+ */
+module.exports = router.get('/:db/order/getMyOrderLists', async ctx => {
+    let result = {success: false, msg: '', data: [], code: -1}
+    let params = ctx.params
+    let obj = await db.findTableList(params.db, "user", {user_type:"1"})
+    let listArray=new Array();
+    if(obj.length>0){
+
+        for (let i=0;i<obj.length;i++){
+            let salesmanName=obj[i].user_name.toString();//业务员名字
+            let salesmanPhone=obj[i].user_phone.toString();//业务员电话
+            let userList = await db.findTableList(params.db, "user", {user_type:"0",sid:obj[i]._id.toString()})
+            for (let j=0;j<userList.length;j++){
+                let uid=userList[j]._id.toString();
+                let customerList = await db.findTableList(params.db, "order", {uid:uid})
+                let customerName = userList[j].user_name.toString();//客户名字
+                let customerPhone= userList[j].user_phone.toString();//客户电话
+
+                for(let z=0;z<customerList.length;z++){
+
+                    let state="";
+                    switch (customerList[j].recommended_state){
+                        case "1":
+                            state="已推荐";
+                            break;
+                        case "2":
+                            state="已上门";
+                            break;
+                        case "3":
+                            state="已成交";
+                            break;
+                        case "4":
+                            state="失效";
+                            break;
+                    }
+                    let objData = {
+                        salesman_name:salesmanName,//业务员名字
+                        salesman_phone:salesmanPhone,//业务员电话
+                        //customer_name:customerName,//客户名字
+                        //customer_phone:customerPhone,//客户电话
+                        friends_name: customerList[z].friends_name,//挚友名字
+                        friends_phone: customerList[z].friends_phone,//挚友电话
+                        friends_address: customerList[z].friends_address,//挚友地址
+                        appointment_date: customerList[z].appointment_date,//挚友预约上门服务日期
+                        appointment_specific_time: customerList[z].appointment_specific_time,//挚友预约上门服务时间
+                        user_name: customerName,//客户名字
+                        user_phone: customerPhone,//客户电话
+                        end_date: customerList[z].end_date,//参加活动结束日期
+                        recommended_state: state,//状态
+                        create_time: customerList[z].create_time//推荐日期
+                    }
+                    listArray.push(objData);
+                }
+            }
+        }
+        /*  let uidArray=new Array();
+          if(sidArray.length>0){
+
+              for (let j=0;j<sidArray.length;j++) {
+                  console.log("==1==>"+sidArray[j])
+                  let obj1 = await db.findTableList(params.db, "user", {user_type:"0",sid:sidArray[j].toString()})
+                  var start = (new Date()).getTime();
+                  while ((new Date()).getTime() - start < 1000) {
+                      continue;
+                  }
+                  console.log("==2==>"+obj1.length)
+              }
+
+
+          }*/
+
+    }
+    result.data = listArray
+    result.success = true
+    result.msg = '获取数据列表成功'
+    result.code = 0
+    ctx.body = result
+})
+
+/**
  * 获取业务员已经推荐的列表
  */
 module.exports = router.post("/:db/order/getSalesmanOrderList", async ctx => {
